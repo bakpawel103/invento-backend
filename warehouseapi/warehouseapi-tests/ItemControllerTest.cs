@@ -13,14 +13,15 @@ namespace warehouseapi_tests
 
         public ItemControllerTest()
         {
-            _itemsRepository = new ItemsRepository();
+            string LocalLowPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace("Roaming", "LocalLow");
+            _itemsRepository = new ItemsRepository(Path.Combine(LocalLowPath, "Invento", "Databases", "items-tests.xml"));
             _itemController = new ItemController(_itemsRepository);
         }
 
         [Fact]
         public void Get_WhenCalled_ReturnsOkResult()
         {
-            var okResult = _itemController.Get();
+            IActionResult okResult = _itemController.Get();
 
             Assert.IsType<OkObjectResult>((OkObjectResult) okResult);
         }
@@ -28,36 +29,37 @@ namespace warehouseapi_tests
         [Fact]
         public void Get_WhenCalled_ReturnsAllItems()
         {
-            List<Item> postItems = new List<Item>();
+            OkObjectResult okResult = (OkObjectResult) _itemController.Get();
 
-            for(int itemIndex = 0; itemIndex < 3; itemIndex++)
-            {
-                var itemDTO = new ItemDTO
-                {
-                    Name = $"Test item name {itemIndex}",
-                    Description = $"Test item description {itemIndex}",
-                    Quantity = itemIndex,
-                    Price = itemIndex
-                };
+            List<Item> items = Assert.IsType<List<Item>>(okResult.Value);
+            Assert.Equal(3, items.Count);
+        }
 
-                postItems.Add((Item)((CreatedAtActionResult)_itemController.Post(itemDTO)).Value);
-            }
+        [Fact]
+        public void Get_WhenCalled_ReturnsOneItem()
+        {
+            Guid existedItemGuid = new Guid("1e1756ff-4ff9-44b5-b973-d08c09c3ff67");
 
-            var okResult = (OkObjectResult) _itemController.Get();
+            OkObjectResult okResult = (OkObjectResult)_itemController.Get(existedItemGuid);
 
-            var items = Assert.IsType<List<Item>>(okResult.Value);
-            Assert.True(items.Count >= 3);
+            Item item = Assert.IsType<Item>(okResult.Value);
+            Assert.NotNull(item);
+        }
 
-            foreach (var postItem in postItems)
-            {
-                _itemController.Delete(postItem.Id);
-            }
+        [Fact]
+        public void Get_WhenCalled_ReturnsZeroItem()
+        {
+            Guid notExistedItemGuid = new Guid("1efa4eff-4ff9-44b5-b973-d08c09c3ff67");
+
+            NotFoundResult notFoundResult = (NotFoundResult)_itemController.Get(notExistedItemGuid);
+
+            Assert.IsType<NotFoundResult>((NotFoundResult)notFoundResult);
         }
 
         [Fact]
         public void Post_WhenCalled_ReturnsCreatedResult()
         {
-            var itemDTO = new ItemDTO
+            ItemDTO itemDTO = new ItemDTO
             {
                 Name = "Test item name 1",
                 Description = "Test item description 1",
@@ -65,9 +67,86 @@ namespace warehouseapi_tests
                 Price = 1
             };
 
-            Item postItem = (Item)((CreatedAtActionResult)_itemController.Post(itemDTO)).Value;
+            IActionResult createdAtActionResult = _itemController.Post(itemDTO);
 
-            _itemController.Delete(postItem.Id);
+            Assert.IsType<CreatedAtActionResult>((CreatedAtActionResult)createdAtActionResult);
+
+            //Clearing
+            _itemController.Delete(((Item)((CreatedAtActionResult)createdAtActionResult).Value).Id);
+        }
+
+        [Fact]
+        public void Put_WhenCalled_ReturnsNotFoundResult()
+        {
+            Guid notExistedItemGuid = new Guid("1efa4eff-4ff9-44b5-b973-d08c09c3ff67");
+
+            ItemDTO itemDTO = new ItemDTO
+            {
+                Name = "Test item name 1",
+                Description = "Test item description 1",
+                Quantity = 1,
+                Price = 1
+            };
+
+            IActionResult notFoundResult = _itemController.Put(notExistedItemGuid, itemDTO);
+
+            Assert.IsType<NotFoundResult>((NotFoundResult)notFoundResult);
+        }
+
+        [Fact]
+        public void Put_WhenCalled_ReturnsOkResult()
+        {
+            Guid existedItemGuid = new Guid("f652bd2b-f456-455f-8b91-ac0fd1f190dd");
+
+            string updatedItemName = $"Item {new Guid()}";
+
+            ItemDTO itemDTO = new ItemDTO
+            {
+                Name = updatedItemName,
+                Description = "Test item description 1",
+                Quantity = 1,
+                Price = 1
+            };
+
+            IActionResult okResult = _itemController.Put(existedItemGuid, itemDTO);
+
+            Assert.IsType<OkObjectResult>((OkObjectResult)okResult);
+
+            //Clearing
+            itemDTO.Name = $"Item {existedItemGuid}";
+            _itemController.Put(existedItemGuid, itemDTO);
+        }
+
+        [Fact]
+        public void Delete_WhenCalled_ReturnsNoContentResult()
+        {
+            ItemDTO itemDTO = new ItemDTO
+            {
+                Name = "Test item name 1",
+                Description = "Test item description 1",
+                Quantity = 1,
+                Price = 1
+            };
+
+            IActionResult createdAtActionResult = _itemController.Post(itemDTO);
+
+            Assert.IsType<CreatedAtActionResult>((CreatedAtActionResult)createdAtActionResult);
+
+            Guid createdItemId = ((Item)((CreatedAtActionResult)createdAtActionResult).Value).Id;
+
+            IActionResult noContentResult = _itemController.Delete(createdItemId);
+
+            Assert.IsType<NoContentResult>((NoContentResult)noContentResult);
+        }
+
+        [Fact]
+        public void Delete_WhenCalled_ReturnsNotFoundResult()
+        {
+            Guid notExistedItemGuid = new Guid("1efa4eff-4ff9-44b5-b973-d08c09c3ff67");
+
+            IActionResult notFoundResult = _itemController.Delete(notExistedItemGuid);
+
+            Assert.IsType<NotFoundResult>((NotFoundResult)notFoundResult);
         }
     }
 }

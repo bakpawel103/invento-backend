@@ -5,15 +5,18 @@ namespace warehouseapi.Repositories
 {
     public class ItemsRepository : IRepository<Item>
     {
-        private string ItemsDbRootPath;
         private string ItemsDbPath;
 
         private List<Item> items = new List<Item>();
 
         public ItemsRepository()
         {
-            ItemsDbRootPath = Path.Combine(Directory.GetCurrentDirectory(), "Databases");
-            ItemsDbPath = Path.Combine(ItemsDbRootPath, "items.xml");
+            string LocalLowPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).Replace("Roaming", "LocalLow");
+            ItemsDbPath = Path.Combine(LocalLowPath, "Invento", "Databases", "items.xml");
+        }
+        public ItemsRepository(string itemsDbPath)
+        {
+            ItemsDbPath = itemsDbPath;
         }
 
         private void InitializeDatabaseFile()
@@ -22,8 +25,8 @@ namespace warehouseapi.Repositories
                 new XElement("items")
             );
 
-            if(!Directory.Exists(ItemsDbRootPath)) {
-                Directory.CreateDirectory(ItemsDbRootPath);
+            if(!Directory.Exists(Path.GetDirectoryName (ItemsDbPath))) {
+                Directory.CreateDirectory(Path.GetDirectoryName(ItemsDbPath));
             }
 
             using (FileStream fs = new FileStream(ItemsDbPath, FileMode.Create))
