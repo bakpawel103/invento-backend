@@ -1,8 +1,10 @@
-﻿namespace warehouseapi.Models
+﻿using warehouseapi.DTOs;
+
+namespace warehouseapi.Models
 {
     public class Item
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public DateTime CreateDate { get; set; }
         public string Description { get; set; }
@@ -11,14 +13,14 @@
 
         public Item()
         {
-            Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid();
             Name = String.Empty;
             Description = String.Empty;
         }
 
-        public Item(ItemBody itemBody)
+        public Item(ItemDTO itemBody)
         {
-            Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid();
             Name = itemBody.Name;
             CreateDate = DateTime.Now;
             Description = itemBody.Description;
@@ -26,12 +28,14 @@
             Price = itemBody.Price;
         }
 
-        public class ItemBody
+        public Item(Guid id, ItemDTO itemBody)
         {
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public float Quantity { get; set; }
-            public float Price { get; set; }
+            Id = id;
+            Name = itemBody.Name;
+            CreateDate = DateTime.Now;
+            Description = itemBody.Description;
+            Quantity = itemBody.Quantity;
+            Price = itemBody.Price;
         }
     }
 }

@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Globalization;
-using System.Xml.Linq;
-using warehouseapi.Databases;
+using warehouseapi.DTOs;
 using warehouseapi.Models;
-using static warehouseapi.Models.Item;
+using warehouseapi.Repositories;
 
 namespace warehouseapi.Controllers
 {
@@ -11,104 +9,60 @@ namespace warehouseapi.Controllers
     [ApiController]
     public class ItemsController : ControllerBase
     {
-        public const string ItemsDbPath = "./Databases/items.xml";
+        private readonly IRepository<Item> _itemsRepository;
+
+        public ItemsController(IRepository<Item> itemsRepository)
+        {
+            _itemsRepository = itemsRepository;
+        }
 
         // GET: api/<ItemsController>
         [HttpGet]
         public IEnumerable<Item> Get()
         {
-            return ItemsDatabaseController.LoadItemsDatabase(ItemsDbPath);
+            return _itemsRepository.GetAll();
         }
 
         // GET api/<ItemsController>/5
         [HttpGet("{id}")]
         public ActionResult<Item> Get(Guid id)
         {
-            List<Item>? items = ItemsDatabaseController.LoadItemsDatabase(ItemsDbPath);
-            if(items == null)
+            Item? item = _itemsRepository.GetById(id);
+            if(item == null)
             {
                 return NotFound();
             }
 
-            Item? item = items.FirstOrDefault(item => item.Id == id.ToString());
-
-            return item != null ? item : NotFound();
+            return Ok(item);
         }
 
         // POST api/<ItemsController>
         [HttpPost]
-        public List<Item> Post([FromBody] ItemBody itemBody)
+        public ActionResult<Item> Post([FromBody] ItemDTO itemDTO)
         {
-            List<Item> items = ItemsDatabaseController.LoadItemsDatabase(ItemsDbPath);
-            items.Add(new Item(itemBody));
+            Item item = _itemsRepository.Create(new Item(itemDTO));
 
-            XDocument root = new XDocument(
-                new XElement("items",
-                    items.Select(item =>
-                        new XElement("item",
-                            new XAttribute("id", item.Id),
-                            new XAttribute("name", item.Name ?? ""),
-                            new XAttribute("createDate", item.CreateDate.ToString() ?? ""),
-                            new XAttribute("description", item.Description ?? ""),
-                            new XAttribute("quantity", item.Quantity),
-                            new XAttribute("price", item.Price)
-                        )
-                    )
-                )
-            );
-
-            using (StreamWriter writer = new StreamWriter(ItemsDbPath))
-            {
-                writer.Write(root.ToString());
-            }
-
-            return items;
+            return Created("Successfully created item", item);
         }
 
         // PUT api/<ItemsController>/5
         [HttpPut("{id}")]
-        public ActionResult<List<Item>> Put(Guid id, [FromBody] ItemBody item)
+        public ActionResult<Item> Put(Guid id, [FromBody] ItemDTO itemDTO)
         {
-            List<Item>? items = ItemsDatabaseController.LoadItemsDatabase(ItemsDbPath);
-            if (items == null)
+            Item? item = _itemsRepository.Update(new Item(id, itemDTO));
+            if(item == null)
             {
-                return NotFound();
+                NotFound();
             }
 
-            Item foundItem = items.FirstOrDefault(item => item.Id == id.ToString());
-            if(foundItem == null)
-            {
-                return NotFound();
-            }
-
-            XDocument root = new XDocument(
-                new XElement("items",
-                    items.Select(item =>
-                        new XElement("item",
-                            new XAttribute("id", item.Id),
-                            new XAttribute("name", item.Name ?? ""),
-                            new XAttribute("createDate", item.CreateDate.ToString() ?? ""),
-                            new XAttribute("description", item.Description ?? ""),
-                            new XAttribute("quantity", item.Quantity),
-                            new XAttribute("price", item.Price)
-                        )
-                    )
-                )
-            );
-
-            using (StreamWriter writer = new StreamWriter(ItemsDbPath))
-            {
-                writer.Write(root.ToString());
-            }
-
-            return items;
+            return Ok(item);
         }
 
         // DELETE api/<ItemsController>/5
         [HttpDelete("{id}")]
         public void Delete(Guid id)
         {
-
+            _itemsRepository.Delete(id);
         }
     }
 }
