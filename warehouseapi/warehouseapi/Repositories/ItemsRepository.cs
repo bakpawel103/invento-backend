@@ -119,7 +119,7 @@ namespace warehouseapi.Repositories
             return item;
         }
 
-        public IEnumerable<Item> GetAll()
+        public List<Item> GetAll()
         {
             LoadItemsDatabase();
 
@@ -133,19 +133,21 @@ namespace warehouseapi.Repositories
             return items.FirstOrDefault(item => item.Id == id);
         }
 
-        public void Delete(Guid id)
+        public bool Delete(Guid id)
         {
             LoadItemsDatabase();
 
             Item? foundItem = items.FirstOrDefault(itemELem => itemELem.Id == id);
             if (foundItem == null)
             {
-                return;
+                return false;
             }
 
             items.Remove(foundItem);
 
             SaveDatabase();
+
+            return true;
         }
     }
 }

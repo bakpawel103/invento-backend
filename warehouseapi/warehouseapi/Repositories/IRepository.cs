@@ -4,8 +4,8 @@
     {
         public T Create(T _object);
         public T? Update(T _object);
-        public IEnumerable<T> GetAll();
+        public List<T> GetAll();
         public T? GetById(Guid id);
-        public void Delete(Guid id);
+        public bool Delete(Guid id);
     }
 }
