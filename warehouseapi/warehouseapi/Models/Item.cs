@@ -15,6 +15,7 @@ namespace warehouseapi.Models
         {
             Id = Guid.NewGuid();
             Name = String.Empty;
+            CreateDate = DateTime.Now;
             Description = String.Empty;
         }
 
