@@ -27,26 +27,6 @@ namespace warehouseapi_tests
         }
 
         [Fact]
-        public void Get_WhenCalled_ReturnsAllItems()
-        {
-            OkObjectResult okResult = (OkObjectResult) _itemController.Get();
-
-            List<Item> items = Assert.IsType<List<Item>>(okResult.Value);
-            Assert.Equal(3, items.Count);
-        }
-
-        [Fact]
-        public void Get_WhenCalled_ReturnsOneItem()
-        {
-            Guid existedItemGuid = new Guid("1e1756ff-4ff9-44b5-b973-d08c09c3ff67");
-
-            OkObjectResult okResult = (OkObjectResult)_itemController.Get(existedItemGuid);
-
-            Item item = Assert.IsType<Item>(okResult.Value);
-            Assert.NotNull(item);
-        }
-
-        [Fact]
         public void Get_WhenCalled_ReturnsZeroItem()
         {
             Guid notExistedItemGuid = new Guid("1efa4eff-4ff9-44b5-b973-d08c09c3ff67");
@@ -96,17 +76,21 @@ namespace warehouseapi_tests
         [Fact]
         public void Put_WhenCalled_ReturnsOkResult()
         {
-            Guid existedItemGuid = new Guid("f652bd2b-f456-455f-8b91-ac0fd1f190dd");
-
-            string updatedItemName = $"Item {new Guid()}";
-
             ItemDTO itemDTO = new ItemDTO
             {
-                Name = updatedItemName,
+                Name = "Test item name 1",
                 Description = "Test item description 1",
                 Quantity = 1,
                 Price = 1
             };
+
+            IActionResult createdAtActionResult = _itemController.Post(itemDTO);
+
+            Guid existedItemGuid = ((Item)((CreatedAtActionResult)createdAtActionResult).Value).Id;
+
+            string updatedItemName = $"Item {new Guid()}";
+
+            itemDTO.Name = updatedItemName;
 
             IActionResult okResult = _itemController.Put(existedItemGuid, itemDTO);
 
@@ -115,6 +99,8 @@ namespace warehouseapi_tests
             //Clearing
             itemDTO.Name = $"Item {existedItemGuid}";
             _itemController.Put(existedItemGuid, itemDTO);
+
+            _itemController.Delete(existedItemGuid);
         }
 
         [Fact]
