@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using warehouseapi.DTOs;
 using warehouseapi.Models;
 using warehouseapi.Repositories;
 
 namespace warehouseapi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Item")]
     [ApiController]
+    [Produces("application/json")]
     public class ItemController : ControllerBase
     {
         private readonly IRepository<Item> _itemsRepository;
@@ -16,50 +18,126 @@ namespace warehouseapi.Controllers
             _itemsRepository = itemsRepository;
         }
 
-        // GET: api/<ItemController>
+        /// <summary>
+        /// Gets all Items.
+        /// </summary>
+        /// <response code="200">Successful operation</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet]
+        [ProducesResponseType(typeof(List<Item>), 200)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult Get()
         {
-            return Ok(_itemsRepository.GetAll());
+            try
+            {
+                return Ok(_itemsRepository.GetAll());
+            }
+            catch (Exception _)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // GET api/<ItemController>/5
+        /// <summary>
+        /// Gets a specific Item.
+        /// </summary>
+        /// <param name="id">Id of the searching item</param>
+        /// <response code="200">Successful operation</response>
+        /// <response code="500">Internal server error</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(Item), 200)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult Get(Guid id)
         {
-            Item? item = _itemsRepository.GetById(id);
+            try
+            {
+                Item? item = _itemsRepository.GetById(id);
 
-            return item is not null ? Ok(item) : NotFound();
+                return item is not null ? Ok(item) : NotFound();
+            }
+            catch (Exception _)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // POST api/<ItemController>
+        /// <summary>
+        /// Creates an Item.
+        /// </summary>
+        /// <param name="itemDTO">Creating item parameters</param>
+        /// <response code="201">Created a new item</response>
+        /// <response code="400">Bad request</response>
+        /// <response code="500">Internal server error</response>
         [HttpPost]
+        [ProducesResponseType(typeof(Item), 201)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult Post([FromBody] ItemDTO itemDTO)
         {
-            Item item = _itemsRepository.Create(new Item(itemDTO));
+            try
+            {
+                Item item = _itemsRepository.Create(new Item(itemDTO));
 
-            return CreatedAtAction("Get", new { id = item.Id }, item);
+                return Created("/api/Item", item);
+            }
+            catch (Exception _)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // PUT api/<ItemController>/5
+        /// <summary>
+        /// Updates a specific Item.
+        /// </summary>
+        /// <param name="id">Id of the searching item</param>
+        /// <param name="itemDTO">Updating item parameter</param>
+        /// <response code="200">Updated a specific item</response>
+        /// <response code="404">Can't fint specific item</response>
+        /// <response code="404">Can't fint specific item</response>
+        /// <response code="500">Internal server error</response>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(Item), 200)]
+        [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(string), 404)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult Put(Guid id, [FromBody] ItemDTO itemDTO)
         {
-            Item? item = _itemsRepository.Update(new Item(id, itemDTO));
-            
-            return item is not null ? Ok(item) : NotFound();
+            try
+            {
+                Item? item = _itemsRepository.Update(new Item(id, itemDTO));
+
+                return item is not null ? Ok(item) : NotFound();
+            }
+            catch (Exception _)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
 
-        // DELETE api/<ItemController>/5
+        /// <summary>
+        /// Deletes a specific Item.
+        /// </summary>
+        /// <param name="id">Id of the searching item</param>
+        /// <response code="200">Successful operation</response>
+        /// <response code="500">Internal server error</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType((int)HttpStatusCode.InternalServerError)]
         public IActionResult Delete(Guid id)
         {
-            if(!_itemsRepository.Delete(id))
+            try
             {
-                return NotFound();
-            }
+                if (!_itemsRepository.Delete(id))
+                {
+                    return NotFound();
+                }
 
-            return NoContent();
+                return Ok();
+            }
+            catch (Exception _)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }
