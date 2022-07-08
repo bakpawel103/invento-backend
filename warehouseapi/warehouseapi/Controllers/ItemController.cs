@@ -3,6 +3,7 @@ using System.Net;
 using warehouseapi.DTOs;
 using warehouseapi.Models;
 using warehouseapi.Repositories;
+using warehouseapi.Services;
 
 namespace warehouseapi.Controllers
 {
@@ -11,11 +12,11 @@ namespace warehouseapi.Controllers
     [Produces("application/json")]
     public class ItemController : ControllerBase
     {
-        private readonly IRepository<Item> _itemsRepository;
+        private readonly IService<Item> _itemsService;
 
-        public ItemController(IRepository<Item> itemsRepository)
+        public ItemController(IService<Item> itemsRepository)
         {
-            _itemsRepository = itemsRepository;
+            _itemsService = itemsRepository;
         }
 
         /// <summary>
@@ -30,7 +31,7 @@ namespace warehouseapi.Controllers
         {
             try
             {
-                return Ok(_itemsRepository.GetAll());
+                return Ok(_itemsService.GetAll());
             }
             catch (Exception _)
             {
@@ -51,7 +52,7 @@ namespace warehouseapi.Controllers
         {
             try
             {
-                Item? item = _itemsRepository.GetById(id);
+                Item? item = _itemsService.GetById(id);
 
                 return item is not null ? Ok(item) : NotFound();
             }
@@ -76,7 +77,7 @@ namespace warehouseapi.Controllers
         {
             try
             {
-                Item item = _itemsRepository.Create(new Item(itemDTO));
+                Item item = _itemsService.Create(new Item(itemDTO));
 
                 return Created("/api/Item", item);
             }
@@ -104,7 +105,7 @@ namespace warehouseapi.Controllers
         {
             try
             {
-                Item? item = _itemsRepository.Update(new Item(id, itemDTO));
+                Item? item = _itemsService.Update(new Item(id, itemDTO));
 
                 return item is not null ? Ok(item) : NotFound();
             }
@@ -127,7 +128,7 @@ namespace warehouseapi.Controllers
         {
             try
             {
-                if (!_itemsRepository.Delete(id))
+                if (!_itemsService.Delete(id))
                 {
                     return NotFound();
                 }

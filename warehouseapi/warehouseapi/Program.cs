@@ -2,6 +2,7 @@
 using System.Reflection;
 using warehouseapi.Models;
 using warehouseapi.Repositories;
+using warehouseapi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,7 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddScoped<IService<Item>, ItemsService>();
 builder.Services.AddScoped<IRepository<Item>, ItemsRepository>();
 
 var app = builder.Build();

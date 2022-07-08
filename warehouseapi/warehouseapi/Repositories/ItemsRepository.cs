@@ -6,74 +6,67 @@ namespace warehouseapi.Repositories
 {
     public class ItemsRepository : IRepository<Item>
     {
-        private List<Item> items = new List<Item>();
-        private ItemDatabaseController itemDatabaseController;
+        private string ItemsDbPath;
 
         public ItemsRepository()
         {
-            itemDatabaseController = new ItemDatabaseController();
+            string localLowPath = ReplaceInternalName(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+            ItemsDbPath = Path.Combine(localLowPath, "Invento", "Databases", "items.xml");
         }
 
-        public Item Create(Item item)
+        public ItemsRepository(string itemsDbPath)
         {
-            items = itemDatabaseController.LoadItemsDatabase();
-
-            items.Add(item);
-
-            itemDatabaseController.SaveItems(items);
-
-            return item;
+            ItemsDbPath = itemsDbPath;
         }
 
-        public Item? Update(Item item)
+        public void InitializeDatabaseFile()
         {
-            items = itemDatabaseController.LoadItemsDatabase();
-
-            Item? foundItem = items.FirstOrDefault(itemELem => itemELem.Id == item.Id);
-            if (foundItem == null)
+            string itemDatabaseDictionaryPath = Path.GetDirectoryName(ItemsDbPath);
+            if (!Directory.Exists(itemDatabaseDictionaryPath))
             {
-                return null;
+                Directory.CreateDirectory(itemDatabaseDictionaryPath);
             }
 
-            foundItem.Name = item.Name;
-            foundItem.Description = item.Description;
-            foundItem.Quantity = item.Quantity;
-            foundItem.Price = item.Price;
+            XDocument root = ItemXDocumentHelper.GetEmpty();
 
-            itemDatabaseController.SaveItems(items);
-
-            return foundItem;
+            SaveDatabase(root);
         }
 
-        public List<Item> GetAll()
+        public void Save(List<Item> items)
         {
-            items = itemDatabaseController.LoadItemsDatabase();
+            XDocument root = ItemXDocumentHelper.GetFromItemsList(items);
 
-            return items;
+            SaveDatabase(root);
         }
 
-        public Item? GetById(Guid id)
+        public List<Item> LoadDatabase()
         {
-            items = itemDatabaseController.LoadItemsDatabase();
-
-            return items.FirstOrDefault(item => item.Id == id);
-        }
-
-        public bool Delete(Guid id)
-        {
-            items = itemDatabaseController.LoadItemsDatabase();
-
-            Item? foundItem = items.FirstOrDefault(itemELem => itemELem.Id == id);
-            if (foundItem == null)
+            if (!File.Exists(ItemsDbPath) || new FileInfo(ItemsDbPath).Length == 0)
             {
-                return false;
+                InitializeDatabaseFile();
             }
 
-            items.Remove(foundItem);
+            XDocument xDocument = XDocument.Load(ItemsDbPath);
 
-            itemDatabaseController.SaveItems(items);
-
-            return true;
+            return ItemXDocumentHelper.GetItemsListFromXDocument(xDocument);
         }
+
+        private void SaveDatabase(XDocument root)
+        {
+            using (FileStream fs = new FileStream(ItemsDbPath, FileMode.Create))
+            {
+                using (StreamWriter writer = new StreamWriter(fs))
+                {
+                    writer.Write(root.ToString());
+                }
+            }
+        }
+
+        #region Helpers
+        private string ReplaceInternalName(string path)
+        {
+            return path.Replace("Roaming", "LocalLow");
+        }
+        #endregion
     }
 }
